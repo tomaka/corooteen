@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![feature(asm)]
-
 extern crate alloc;
 
 use alloc::{boxed::Box, rc::Rc};
@@ -60,7 +58,7 @@ struct Shared<TInt, TRes> {
     /// On initialization, must point to a memory location that contains the second parameter of
     /// `start_call`.
     /// Afterwards, must point to a memory location that contains the value 0 then
-    /// the saved value of `rbp`, then the value of `rip` to return to.
+    /// the saved values of `rbp`, `rbx`, `r12`-`r15`, then the value of `rip` to return to.
     ///
     /// In order to resume the coroutine, set `rsp` to this value then pop all the registers.
     coroutine_stack_pointer: Cell<usize>,
@@ -262,7 +260,19 @@ extern "C" fn start_call(caller_stack_pointer: usize, to_exec: usize) {
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+// TODO: remove when `asm` is stable
+#[no_mangle]
+pub extern "C" fn corooteen_start_call(caller_stack_pointer: usize, to_exec: usize) {
+    start_call(caller_stack_pointer, to_exec)
+}
+
+// TODO: remove when `asm` is stable
+extern "C" {
+    fn coroutine_switch_stack(stack: usize) -> usize;
+}
+
+// TODO: restore when `asm` is stable
+/*#[cfg(target_arch = "x86_64")]
 unsafe fn coroutine_switch_stack(stack: usize) -> usize {
     let stack_out;
     asm!(r#"
@@ -321,7 +331,7 @@ unsafe fn coroutine_switch_stack(stack: usize) -> usize {
     );
 
     stack_out
-}
+}*/
 
 #[cfg(test)]
 mod tests {
