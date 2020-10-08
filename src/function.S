@@ -1,5 +1,12 @@
-.global coroutine_switch_stack
-coroutine_switch_stack:
+#if defined(__WIN32__) || defined(__APPLE__)
+# define cdecl(s) _##s
+#else
+# define cdecl(s) s
+#endif
+
+.global cdecl(corooteen_start_call)
+.global cdecl(coroutine_switch_stack)
+cdecl(coroutine_switch_stack):
     push %rbp
     push %rbx
     push %r12
@@ -26,7 +33,7 @@ coroutine_switch_stack:
     cmp $0, %rsi
     je 2f
     mov %rax, %rdi
-    call corooteen_start_call
+    call cdecl(corooteen_start_call)
     int $3
 
     // If we reach here, it means that we are about to return to a code that has indeed called
